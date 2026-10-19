@@ -51,7 +51,7 @@ public class Carga {
     private EstadoCarga estado = EstadoCarga.PENDIENTE;
 
     private String metodoPago;
-    
+
     @Column(nullable = false)
     private Boolean pagado = false;
 
@@ -59,6 +59,10 @@ public class Carga {
     private Double latitudActual;
     private Double longitudActual;
     private LocalDateTime ultimaActualizacionUbicacion;
+
+    // --- NUEVOS CAMPOS PARA EL R09 (CALIFICACIÓN) ---
+    private Integer calificacion;
+    private String comentarioCalificacion;
 
     public enum EstadoCarga {
         PENDIENTE,
