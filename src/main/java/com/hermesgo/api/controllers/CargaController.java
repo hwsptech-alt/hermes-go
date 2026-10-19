@@ -123,4 +123,32 @@ public class CargaController {
         
         return ResponseEntity.ok(cargaRepository.save(carga));
     }
+    // R10: Historial de cargas del cliente
+    @GetMapping("/historial/{clienteId}")
+    public ResponseEntity<?> obtenerHistorial(@PathVariable Long clienteId) {
+        return ResponseEntity.ok(cargaRepository.findByClienteId(clienteId));
+    }
+    // R12: Calificar el servicio (Endpoint separado)
+    @PutMapping("/{cargaId}/calificar")
+    public ResponseEntity<?> calificarServicio(
+            @PathVariable Long cargaId,
+            @RequestParam Integer calificacion,
+            @RequestParam(required = false) String comentario) {
+        
+        Optional<Carga> cargaOpt = cargaRepository.findById(cargaId);
+        if (cargaOpt.isEmpty()) return ResponseEntity.badRequest().body("La carga no existe");
+
+        Carga carga = cargaOpt.get();
+        if (carga.getEstado() != Carga.EstadoCarga.ENTREGADA) {
+            return ResponseEntity.badRequest().body("La carga debe estar entregada para poder calificar");
+        }
+        if (calificacion < 1 || calificacion > 5) {
+            return ResponseEntity.badRequest().body("La calificación debe ser entre 1 y 5");
+        }
+
+        carga.setCalificacion(calificacion);
+        carga.setComentarioCalificacion(comentario);
+        
+        return ResponseEntity.ok(cargaRepository.save(carga));
+    }
 }
