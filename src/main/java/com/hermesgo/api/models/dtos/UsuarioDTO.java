@@ -23,6 +23,13 @@ public class UsuarioDTO {
     @NotBlank(message = "El rol es obligatorio")
     private String rol;
 
+    // --- NUEVOS CAMPOS PARA EL TRANSPORTADOR (R05) ---
+    private String tipoVehiculo;
+    private String placa;
+    private Double capacidad;
+    private Double calificacion;
+    private Double precioBase;
+
     public Usuario toEntity() {
         Usuario usuario = new Usuario();
         usuario.setNombreCompleto(this.nombreCompleto);
@@ -30,6 +37,14 @@ public class UsuarioDTO {
         usuario.setContrasena(this.contrasena);
         usuario.setTelefono(this.telefono);
         usuario.setRol(Usuario.Rol.valueOf(this.rol.toUpperCase()));
+        
+        // Asignamos los nuevos campos
+        usuario.setTipoVehiculo(this.tipoVehiculo);
+        usuario.setPlaca(this.placa);
+        usuario.setCapacidad(this.capacidad);
+        usuario.setCalificacion(this.calificacion);
+        usuario.setPrecioBase(this.precioBase);
+        
         return usuario;
     }
 }

@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Optional;
 
 @RestController
@@ -46,7 +47,7 @@ public class UsuarioController {
         return ResponseEntity.ok(usuario);
     }
 
-    // R03: Perfil del Usuario (Nuevo)
+    // R03: Perfil
     @GetMapping("/{id}")
     public ResponseEntity<?> obtenerPerfil(@PathVariable Long id) {
         Optional<Usuario> usuarioOpt = usuarioRepository.findById(id);
@@ -56,5 +57,12 @@ public class UsuarioController {
         }
         
         return ResponseEntity.ok(usuarioOpt.get());
+    }
+
+    // R05: Listar transportadores disponibles
+    @GetMapping("/transportadores")
+    public ResponseEntity<?> listarTransportadores() {
+        List<Usuario> transportadores = usuarioRepository.findByRol(Usuario.Rol.TRANSPORTADOR);
+        return ResponseEntity.ok(transportadores);
     }
 }

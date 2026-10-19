@@ -27,6 +27,13 @@ public class Usuario {
     @Column(nullable = false)
     private Rol rol;
 
+    // Campos específicos para TRANSPORTADORES (nulos para clientes)
+    private String tipoVehiculo;
+    private String placa;
+    private Double capacidad;
+    private Double calificacion;
+    private Double precioBase;
+
     public enum Rol {
         CLIENTE,
         TRANSPORTADOR,
