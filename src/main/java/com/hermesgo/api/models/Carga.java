@@ -38,19 +38,23 @@ public class Carga {
 
     private String descripcion;
 
-    // Relación con el cliente que publica la carga
     @ManyToOne
     @JoinColumn(name = "cliente_id", nullable = false)
     private Usuario cliente;
 
-    // --- NUEVOS CAMPOS PARA EL R06 ---
     @ManyToOne
     @JoinColumn(name = "transportador_id")
-    private Usuario transportador; // Puede ser nulo hasta que alguien la acepte
+    private Usuario transportador;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private EstadoCarga estado = EstadoCarga.PENDIENTE;
+
+    // --- NUEVOS CAMPOS PARA EL R07 (PAGOS) ---
+    private String metodoPago; // TARJETA, NEQUI, PSE
+    
+    @Column(nullable = false)
+    private Boolean pagado = false;
 
     public enum EstadoCarga {
         PENDIENTE,

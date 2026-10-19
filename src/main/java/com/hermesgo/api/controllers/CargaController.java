@@ -37,7 +37,7 @@ public class CargaController {
         return ResponseEntity.ok(cargaGuardada);
     }
 
-    // R06: Aceptar Servicio (Un transportador acepta la carga)
+    // R06: Aceptar Servicio
     @PutMapping("/{cargaId}/aceptar/{transportadorId}")
     public ResponseEntity<?> aceptarCarga(
             @PathVariable Long cargaId, 
@@ -56,19 +56,47 @@ public class CargaController {
         Carga carga = cargaOpt.get();
         Usuario transportador = transportadorOpt.get();
 
-        // Verificamos que el transportador tenga el rol correcto
         if (transportador.getRol() != Usuario.Rol.TRANSPORTADOR) {
             return ResponseEntity.badRequest().body("El usuario no es un transportador");
         }
 
-        // Verificamos que la carga esté pendiente
         if (carga.getEstado() != Carga.EstadoCarga.PENDIENTE) {
             return ResponseEntity.badRequest().body("La carga ya fue aceptada o está en proceso");
         }
 
-        // Asignamos el transportador y cambiamos el estado
         carga.setTransportador(transportador);
         carga.setEstado(Carga.EstadoCarga.ACEPTADA);
+        
+        Carga cargaActualizada = cargaRepository.save(carga);
+        return ResponseEntity.ok(cargaActualizada);
+    }
+
+    // R07: Pagar Servicio (Simulado)
+    @PutMapping("/{cargaId}/pagar")
+    public ResponseEntity<?> pagarCarga(
+            @PathVariable Long cargaId, 
+            @RequestParam String metodoPago) {
+        
+        Optional<Carga> cargaOpt = cargaRepository.findById(cargaId);
+
+        if (cargaOpt.isEmpty()) {
+            return ResponseEntity.badRequest().body("La carga no existe");
+        }
+
+        Carga carga = cargaOpt.get();
+
+        // Validamos que la carga ya haya sido aceptada por un transportador
+        if (carga.getEstado() == Carga.EstadoCarga.PENDIENTE) {
+            return ResponseEntity.badRequest().body("La carga debe ser aceptada antes de pagar");
+        }
+
+        if (carga.getPagado()) {
+            return ResponseEntity.badRequest().body("La carga ya fue pagada");
+        }
+
+        // Simulamos el pago exitoso
+        carga.setMetodoPago(metodoPago.toUpperCase());
+        carga.setPagado(true);
         
         Carga cargaActualizada = cargaRepository.save(carga);
         return ResponseEntity.ok(cargaActualizada);
