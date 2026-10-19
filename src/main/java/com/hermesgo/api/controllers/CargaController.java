@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 @RestController
@@ -85,7 +86,6 @@ public class CargaController {
 
         Carga carga = cargaOpt.get();
 
-        // Validamos que la carga ya haya sido aceptada por un transportador
         if (carga.getEstado() == Carga.EstadoCarga.PENDIENTE) {
             return ResponseEntity.badRequest().body("La carga debe ser aceptada antes de pagar");
         }
@@ -94,11 +94,50 @@ public class CargaController {
             return ResponseEntity.badRequest().body("La carga ya fue pagada");
         }
 
-        // Simulamos el pago exitoso
         carga.setMetodoPago(metodoPago.toUpperCase());
         carga.setPagado(true);
         
         Carga cargaActualizada = cargaRepository.save(carga);
         return ResponseEntity.ok(cargaActualizada);
+    }
+
+    // R08: Actualizar ubicación (El transportador envía su lat/lng)
+    @PutMapping("/{cargaId}/ubicacion")
+    public ResponseEntity<?> actualizarUbicacion(
+            @PathVariable Long cargaId,
+            @RequestParam Double latitud,
+            @RequestParam Double longitud) {
+        
+        Optional<Carga> cargaOpt = cargaRepository.findById(cargaId);
+
+        if (cargaOpt.isEmpty()) {
+            return ResponseEntity.badRequest().body("La carga no existe");
+        }
+
+        Carga carga = cargaOpt.get();
+        carga.setLatitudActual(latitud);
+        carga.setLongitudActual(longitud);
+        carga.setUltimaActualizacionUbicacion(LocalDateTime.now());
+        
+        // Cambiamos el estado a EN_RUTA si aún no lo está
+        if (carga.getEstado() == Carga.EstadoCarga.ACEPTADA) {
+            carga.setEstado(Carga.EstadoCarga.EN_RUTA);
+        }
+
+        Carga cargaActualizada = cargaRepository.save(carga);
+        return ResponseEntity.ok(cargaActualizada);
+    }
+
+    // R08: Consultar ubicación (El cliente ve dónde va su carga)
+    @GetMapping("/{cargaId}/seguimiento")
+    public ResponseEntity<?> consultarSeguimiento(@PathVariable Long cargaId) {
+        Optional<Carga> cargaOpt = cargaRepository.findById(cargaId);
+
+        if (cargaOpt.isEmpty()) {
+            return ResponseEntity.badRequest().body("La carga no existe");
+        }
+
+        Carga carga = cargaOpt.get();
+        return ResponseEntity.ok(carga);
     }
 }

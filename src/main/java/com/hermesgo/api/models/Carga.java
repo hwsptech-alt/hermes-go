@@ -50,11 +50,15 @@ public class Carga {
     @Column(nullable = false)
     private EstadoCarga estado = EstadoCarga.PENDIENTE;
 
-    // --- NUEVOS CAMPOS PARA EL R07 (PAGOS) ---
-    private String metodoPago; // TARJETA, NEQUI, PSE
+    private String metodoPago;
     
     @Column(nullable = false)
     private Boolean pagado = false;
+
+    // --- NUEVOS CAMPOS PARA EL R08 (SEGUIMIENTO) ---
+    private Double latitudActual;
+    private Double longitudActual;
+    private LocalDateTime ultimaActualizacionUbicacion;
 
     public enum EstadoCarga {
         PENDIENTE,
