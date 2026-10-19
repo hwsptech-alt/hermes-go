@@ -18,7 +18,7 @@ public class UsuarioController {
     @Autowired
     private UsuarioRepository usuarioRepository;
 
-    // R01: Registro de usuario
+    // R01: Registro
     @PostMapping("/registro")
     public ResponseEntity<?> registrarUsuario(@Valid @RequestBody UsuarioDTO usuarioDTO) {
         if (usuarioRepository.findByCorreoElectronico(usuarioDTO.getCorreoElectronico()).isPresent()) {
@@ -29,7 +29,7 @@ public class UsuarioController {
         return ResponseEntity.ok(usuarioGuardado);
     }
 
-    // R02: Inicio de sesión
+    // R02: Login
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginDTO loginDTO) {
         Optional<Usuario> usuarioOpt = usuarioRepository.findByCorreoElectronico(loginDTO.getCorreoElectronico());
@@ -39,12 +39,22 @@ public class UsuarioController {
         }
 
         Usuario usuario = usuarioOpt.get();
-        
-        // Validación temporal de contraseña (luego la encriptaremos)
         if (!usuario.getContrasena().equals(loginDTO.getContrasena())) {
             return ResponseEntity.status(401).body("Credenciales incorrectas");
         }
 
         return ResponseEntity.ok(usuario);
+    }
+
+    // R03: Perfil del Usuario (Nuevo)
+    @GetMapping("/{id}")
+    public ResponseEntity<?> obtenerPerfil(@PathVariable Long id) {
+        Optional<Usuario> usuarioOpt = usuarioRepository.findById(id);
+        
+        if (usuarioOpt.isEmpty()) {
+            return ResponseEntity.status(404).body("Usuario no encontrado");
+        }
+        
+        return ResponseEntity.ok(usuarioOpt.get());
     }
 }
