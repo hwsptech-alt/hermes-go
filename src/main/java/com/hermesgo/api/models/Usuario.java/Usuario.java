@@ -23,6 +23,9 @@ public class Usuario {
 
     private String telefono;
 
+    // NUEVO CAMPO PARA LA FOTO DE PERFIL
+    private String fotoUrl;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Rol rol;
