@@ -37,6 +37,11 @@ public class CargaController {
         }
 
         Carga carga = cargaDTO.toEntity(clienteOpt.get());
+        
+        // GENERAMOS EL CÓDIGO DE ENTREGA ALEATORIO (4 DÍGITOS)
+        String codigo = String.valueOf((int)(Math.random() * 9000) + 1000);
+        carga.setCodigoEntrega(codigo);
+
         return ResponseEntity.ok(cargaRepository.save(carga));
     }
 
@@ -54,8 +59,12 @@ public class CargaController {
 
         Carga nuevaCarga = cargaDTO.toEntity(clienteOpt.get());
         nuevaCarga.setEstaReliquidada(false);
+        
+        // GENERAMOS EL CÓDIGO DE ENTREGA ALEATORIO
+        String codigo = String.valueOf((int)(Math.random() * 9000) + 1000);
+        nuevaCarga.setCodigoEntrega(codigo);
 
-        // Buscar cargas compatibles (solo PENDIENTES y que no hayan sido reliquidadas)
+        // Buscar cargas compatibles
         List<Carga> cargasCompatibles = cargaRepository.findAll().stream()
                 .filter(c -> c.getOrigen().equalsIgnoreCase(nuevaCarga.getOrigen())
                         && c.getDestino().equalsIgnoreCase(nuevaCarga.getDestino())
@@ -68,20 +77,15 @@ public class CargaController {
             Carga cargaExistente = cargasCompatibles.get(0);
             
             double pesoTotal = cargaExistente.getPeso() + nuevaCarga.getPeso();
-            
-            // El precio base total del viaje es el que puso la PRIMERA carga
             double precioTotalViaje = cargaExistente.getPrecioBase() != null ? cargaExistente.getPrecioBase() : 1000000;
 
-            // Calculamos la proporción exacta de cada uno
             double precioExistente = (cargaExistente.getPeso() / pesoTotal) * precioTotalViaje;
             double precioNueva = (nuevaCarga.getPeso() / pesoTotal) * precioTotalViaje;
 
-            // Actualizamos la carga vieja
             cargaExistente.setPrecioFinal(precioExistente);
             cargaExistente.setEstaReliquidada(true);
             cargaRepository.save(cargaExistente);
 
-            // Actualizamos la carga nueva
             nuevaCarga.setPrecioBase(precioTotalViaje); 
             nuevaCarga.setPrecioFinal(precioNueva);
             nuevaCarga.setEstaReliquidada(true);
@@ -134,6 +138,29 @@ public class CargaController {
         return ResponseEntity.ok(cargaRepository.save(carga));
     }
 
+    // R09: Confirmar entrega con Código y Observaciones
+    @PutMapping("/{cargaId}/confirmar-entrega")
+    public ResponseEntity<?> confirmarEntrega(
+            @PathVariable Long cargaId,
+            @RequestParam String codigo,
+            @RequestParam(required = false) String observaciones) {
+        
+        Optional<Carga> cargaOpt = cargaRepository.findById(cargaId);
+        if (cargaOpt.isEmpty()) return ResponseEntity.badRequest().body("La carga no existe");
+
+        Carga carga = cargaOpt.get();
+        
+        // VALIDACIÓN DEL CÓDIGO
+        if (!carga.getCodigoEntrega().equals(codigo)) {
+            return ResponseEntity.badRequest().body("El código de entrega es incorrecto");
+        }
+
+        carga.setEstado(Carga.EstadoCarga.ENTREGADA);
+        carga.setObservacionesEntrega(observaciones); // Guardamos las observaciones
+        
+        return ResponseEntity.ok(cargaRepository.save(carga));
+    }
+
     // R08: Actualizar ubicación
     @PutMapping("/{cargaId}/ubicacion")
     public ResponseEntity<?> actualizarUbicacion(@PathVariable Long cargaId, @RequestParam Double latitud, @RequestParam Double longitud) {
@@ -156,31 +183,6 @@ public class CargaController {
         Optional<Carga> cargaOpt = cargaRepository.findById(cargaId);
         if (cargaOpt.isEmpty()) return ResponseEntity.badRequest().body("La carga no existe");
         return ResponseEntity.ok(cargaOpt.get());
-    }
-
-    // R09: Confirmar entrega y calificar
-    @PutMapping("/{cargaId}/confirmar-entrega")
-    public ResponseEntity<?> confirmarEntregaYCalificar(
-            @PathVariable Long cargaId,
-            @RequestParam Integer calificacion,
-            @RequestParam(required = false) String comentario) {
-        
-        Optional<Carga> cargaOpt = cargaRepository.findById(cargaId);
-        if (cargaOpt.isEmpty()) return ResponseEntity.badRequest().body("La carga no existe");
-
-        Carga carga = cargaOpt.get();
-        if (carga.getEstado() == Carga.EstadoCarga.ENTREGADA) {
-            return ResponseEntity.badRequest().body("La carga ya fue entregada");
-        }
-        if (calificacion < 1 || calificacion > 5) {
-            return ResponseEntity.badRequest().body("La calificación debe ser entre 1 y 5");
-        }
-
-        carga.setEstado(Carga.EstadoCarga.ENTREGADA);
-        carga.setCalificacion(calificacion);
-        carga.setComentarioCalificacion(comentario);
-        
-        return ResponseEntity.ok(cargaRepository.save(carga));
     }
 
     // R10: Historial de cargas del cliente
@@ -213,7 +215,7 @@ public class CargaController {
         return ResponseEntity.ok(cargaRepository.save(carga));
     }
 
-    // R06: Obtener cargas disponibles para transportadores
+    // Obtener cargas disponibles para transportadores
     @GetMapping("/disponibles")
     public ResponseEntity<?> obtenerCargasDisponibles() {
         List<Carga> cargas = cargaRepository.findAll().stream()

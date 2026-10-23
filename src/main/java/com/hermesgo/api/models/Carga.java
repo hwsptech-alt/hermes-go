@@ -19,6 +19,10 @@ public class Carga {
     @Column(nullable = false)
     private String destino;
 
+    // NUEVOS CAMPOS PARA DIRECCIONES
+    private String direccionOrigen;
+    private String direccionDestino;
+
     @Column(nullable = false)
     private LocalDateTime fechaHora;
 
@@ -64,10 +68,14 @@ public class Carga {
     private Integer calificacion;
     private String comentarioCalificacion;
 
-    // --- NUEVOS CAMPOS PARA EL R04 (RELIQUIDACIÓN) ---
+    // --- CAMPOS PARA EL R04 (RELIQUIDACIÓN) ---
     private Double precioBase;
     private Double precioFinal;
     private Boolean estaReliquidada = false;
+
+    // --- NUEVOS CAMPOS PARA EL ACTA DE ENTREGA (R09) ---
+    private String codigoEntrega;
+    private String observacionesEntrega;
 
     public enum EstadoCarga {
         PENDIENTE,

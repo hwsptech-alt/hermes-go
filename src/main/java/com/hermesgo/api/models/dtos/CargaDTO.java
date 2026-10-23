@@ -9,6 +9,8 @@ public class CargaDTO {
 
     private String origen;
     private String destino;
+    private String direccionOrigen;
+    private String direccionDestino;
     private LocalDateTime fechaHora;
     private String tipoCarga;
     private Double peso;
@@ -23,6 +25,8 @@ public class CargaDTO {
         Carga carga = new Carga();
         carga.setOrigen(this.origen);
         carga.setDestino(this.destino);
+        carga.setDireccionOrigen(this.direccionOrigen);
+        carga.setDireccionDestino(this.direccionDestino);
         carga.setFechaHora(this.fechaHora);
         carga.setTipoCarga(this.tipoCarga);
         carga.setPeso(this.peso);
