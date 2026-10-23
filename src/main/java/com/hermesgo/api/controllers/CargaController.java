@@ -156,7 +156,7 @@ public class CargaController {
         }
 
         carga.setEstado(Carga.EstadoCarga.ENTREGADA);
-        carga.setObservacionesEntrega(observaciones); // Guardamos las observaciones
+        carga.setObservacionesEntrega(observaciones);
         
         return ResponseEntity.ok(cargaRepository.save(carga));
     }
@@ -215,12 +215,18 @@ public class CargaController {
         return ResponseEntity.ok(cargaRepository.save(carga));
     }
 
-    // Obtener cargas disponibles para transportadores
+    // Obtener cargas disponibles para transportadores (PENDIENTES)
     @GetMapping("/disponibles")
     public ResponseEntity<?> obtenerCargasDisponibles() {
         List<Carga> cargas = cargaRepository.findAll().stream()
                 .filter(c -> c.getEstado() == Carga.EstadoCarga.PENDIENTE)
                 .toList();
         return ResponseEntity.ok(cargas);
+    }
+
+    // NUEVO: Obtener TODAS las cargas (para que el transportador vea sus viajes)
+    @GetMapping("/todas")
+    public ResponseEntity<?> obtenerTodasLasCargas() {
+        return ResponseEntity.ok(cargaRepository.findAll());
     }
 }
