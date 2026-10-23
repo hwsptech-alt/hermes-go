@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @RestController
@@ -23,15 +24,73 @@ public class CargaController {
     @Autowired
     private UsuarioRepository usuarioRepository;
 
-    // R04: Publicar Carga
+    // R04: Publicar Carga (Normal)
     @PostMapping("/publicar")
     public ResponseEntity<?> publicarCarga(@Valid @RequestBody CargaDTO cargaDTO) {
         Optional<Usuario> clienteOpt = usuarioRepository.findById(cargaDTO.getClienteId());
         if (clienteOpt.isEmpty()) {
             return ResponseEntity.badRequest().body("El cliente no existe");
         }
+
+        if (cargaDTO.getFechaHora().isBefore(LocalDateTime.now())) {
+            return ResponseEntity.badRequest().body("La fecha y hora no pueden ser anteriores a hoy.");
+        }
+
         Carga carga = cargaDTO.toEntity(clienteOpt.get());
         return ResponseEntity.ok(cargaRepository.save(carga));
+    }
+
+    // R04: Publicar Carga con Reliquidación Proporcional (Compartida)
+    @PostMapping("/publicar-compartida")
+    public ResponseEntity<?> publicarCargaCompartida(@Valid @RequestBody CargaDTO cargaDTO) {
+        Optional<Usuario> clienteOpt = usuarioRepository.findById(cargaDTO.getClienteId());
+        if (clienteOpt.isEmpty()) {
+            return ResponseEntity.badRequest().body("El cliente no existe");
+        }
+
+        if (cargaDTO.getFechaHora().isBefore(LocalDateTime.now())) {
+            return ResponseEntity.badRequest().body("La fecha y hora no pueden ser anteriores a hoy.");
+        }
+
+        Carga nuevaCarga = cargaDTO.toEntity(clienteOpt.get());
+        nuevaCarga.setEstaReliquidada(false);
+
+        // Buscar cargas compatibles (solo PENDIENTES y que no hayan sido reliquidadas)
+        List<Carga> cargasCompatibles = cargaRepository.findAll().stream()
+                .filter(c -> c.getOrigen().equalsIgnoreCase(nuevaCarga.getOrigen())
+                        && c.getDestino().equalsIgnoreCase(nuevaCarga.getDestino())
+                        && c.getEsCompartida()
+                        && (c.getEstaReliquidada() == null || !c.getEstaReliquidada())
+                        && c.getEstado() == Carga.EstadoCarga.PENDIENTE)
+                .toList();
+
+        if (!cargasCompatibles.isEmpty()) {
+            Carga cargaExistente = cargasCompatibles.get(0);
+            
+            double pesoTotal = cargaExistente.getPeso() + nuevaCarga.getPeso();
+            
+            // El precio base total del viaje es el que puso la PRIMERA carga
+            double precioTotalViaje = cargaExistente.getPrecioBase() != null ? cargaExistente.getPrecioBase() : 1000000;
+
+            // Calculamos la proporción exacta de cada uno
+            double precioExistente = (cargaExistente.getPeso() / pesoTotal) * precioTotalViaje;
+            double precioNueva = (nuevaCarga.getPeso() / pesoTotal) * precioTotalViaje;
+
+            // Actualizamos la carga vieja
+            cargaExistente.setPrecioFinal(precioExistente);
+            cargaExistente.setEstaReliquidada(true);
+            cargaRepository.save(cargaExistente);
+
+            // Actualizamos la carga nueva
+            nuevaCarga.setPrecioBase(precioTotalViaje); 
+            nuevaCarga.setPrecioFinal(precioNueva);
+            nuevaCarga.setEstaReliquidada(true);
+            cargaRepository.save(nuevaCarga);
+
+            return ResponseEntity.ok(nuevaCarga);
+        }
+
+        return ResponseEntity.ok(cargaRepository.save(nuevaCarga));
     }
 
     // R06: Aceptar Servicio
@@ -123,11 +182,13 @@ public class CargaController {
         
         return ResponseEntity.ok(cargaRepository.save(carga));
     }
+
     // R10: Historial de cargas del cliente
     @GetMapping("/historial/{clienteId}")
     public ResponseEntity<?> obtenerHistorial(@PathVariable Long clienteId) {
         return ResponseEntity.ok(cargaRepository.findByClienteId(clienteId));
     }
+
     // R12: Calificar el servicio (Endpoint separado)
     @PutMapping("/{cargaId}/calificar")
     public ResponseEntity<?> calificarServicio(
@@ -150,5 +211,14 @@ public class CargaController {
         carga.setComentarioCalificacion(comentario);
         
         return ResponseEntity.ok(cargaRepository.save(carga));
+    }
+
+    // R06: Obtener cargas disponibles para transportadores
+    @GetMapping("/disponibles")
+    public ResponseEntity<?> obtenerCargasDisponibles() {
+        List<Carga> cargas = cargaRepository.findAll().stream()
+                .filter(c -> c.getEstado() == Carga.EstadoCarga.PENDIENTE)
+                .toList();
+        return ResponseEntity.ok(cargas);
     }
 }

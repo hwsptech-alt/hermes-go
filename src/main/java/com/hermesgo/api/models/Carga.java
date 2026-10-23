@@ -55,14 +55,19 @@ public class Carga {
     @Column(nullable = false)
     private Boolean pagado = false;
 
-    // --- NUEVOS CAMPOS PARA EL R08 (SEGUIMIENTO) ---
+    // --- CAMPOS PARA EL R08 (SEGUIMIENTO) ---
     private Double latitudActual;
     private Double longitudActual;
     private LocalDateTime ultimaActualizacionUbicacion;
 
-    // --- NUEVOS CAMPOS PARA EL R09 (CALIFICACIÓN) ---
+    // --- CAMPOS PARA EL R09 (CALIFICACIÓN) ---
     private Integer calificacion;
     private String comentarioCalificacion;
+
+    // --- NUEVOS CAMPOS PARA EL R04 (RELIQUIDACIÓN) ---
+    private Double precioBase;
+    private Double precioFinal;
+    private Boolean estaReliquidada = false;
 
     public enum EstadoCarga {
         PENDIENTE,

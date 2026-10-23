@@ -17,6 +17,7 @@ public class CargaDTO {
     private Boolean esCompartida;
     private String descripcion;
     private Long clienteId;
+    private Double precioBase;
 
     public Carga toEntity(com.hermesgo.api.models.Usuario cliente) {
         Carga carga = new Carga();
@@ -30,6 +31,8 @@ public class CargaDTO {
         carga.setEsCompartida(this.esCompartida);
         carga.setDescripcion(this.descripcion);
         carga.setCliente(cliente);
+        carga.setPrecioBase(this.precioBase);
+        carga.setPrecioFinal(this.precioBase);
         return carga;
     }
 }
