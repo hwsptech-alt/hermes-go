@@ -103,4 +103,22 @@ public class UsuarioController {
             return ResponseEntity.status(500).body("Error al subir la foto: " + e.getMessage());
         }
     }
+
+    // R03: Actualizar datos del perfil (teléfono, etc.)
+    @PutMapping("/{id}")
+    public ResponseEntity<?> actualizarPerfil(@PathVariable Long id, @RequestBody Usuario datosActualizados) {
+        Optional<Usuario> usuarioOpt = usuarioRepository.findById(id);
+        if (usuarioOpt.isEmpty()) {
+            return ResponseEntity.badRequest().body("Usuario no encontrado");
+        }
+        
+        Usuario usuario = usuarioOpt.get();
+        
+        // Actualizamos solo los campos permitidos
+        if (datosActualizados.getTelefono() != null) {
+            usuario.setTelefono(datosActualizados.getTelefono());
+        }
+        
+        return ResponseEntity.ok(usuarioRepository.save(usuario));
+    }
 }

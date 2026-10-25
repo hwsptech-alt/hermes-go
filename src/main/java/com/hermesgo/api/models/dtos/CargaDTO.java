@@ -20,6 +20,9 @@ public class CargaDTO {
     private String descripcion;
     private Long clienteId;
     private Double precioBase;
+    
+    // NUEVO CAMPO PARA EL CÓDIGO DE RECOGIDA
+    private String codigoRecogida;
 
     public Carga toEntity(com.hermesgo.api.models.Usuario cliente) {
         Carga carga = new Carga();
@@ -37,6 +40,10 @@ public class CargaDTO {
         carga.setCliente(cliente);
         carga.setPrecioBase(this.precioBase);
         carga.setPrecioFinal(this.precioBase);
+        
+        // MAPEAMOS EL CÓDIGO DE RECOGIDA
+        carga.setCodigoRecogida(this.codigoRecogida);
+        
         return carga;
     }
 }

@@ -32,15 +32,16 @@ public class CargaController {
             return ResponseEntity.badRequest().body("El cliente no existe");
         }
 
-        if (cargaDTO.getFechaHora().isBefore(LocalDateTime.now())) {
-            return ResponseEntity.badRequest().body("La fecha y hora no pueden ser anteriores a hoy.");
+        // Validación: mínimo 1 día de anticipación (24 horas)
+        if (cargaDTO.getFechaHora().isBefore(LocalDateTime.now().plusDays(1))) {
+            return ResponseEntity.badRequest().body("La carga debe ser programada con al menos 24 horas de anticipación.");
         }
 
         Carga carga = cargaDTO.toEntity(clienteOpt.get());
         
-        // GENERAMOS EL CÓDIGO DE ENTREGA ALEATORIO (4 DÍGITOS)
-        String codigo = String.valueOf((int)(Math.random() * 9000) + 1000);
-        carga.setCodigoEntrega(codigo);
+        // GENERAMOS EL CÓDIGO DE ENTREGA Y RECOGIDA (4 DÍGITOS)
+        carga.setCodigoEntrega(String.valueOf((int)(Math.random() * 9000) + 1000));
+        carga.setCodigoRecogida(String.valueOf((int)(Math.random() * 9000) + 1000));
 
         return ResponseEntity.ok(cargaRepository.save(carga));
     }
@@ -53,16 +54,16 @@ public class CargaController {
             return ResponseEntity.badRequest().body("El cliente no existe");
         }
 
-        if (cargaDTO.getFechaHora().isBefore(LocalDateTime.now())) {
-            return ResponseEntity.badRequest().body("La fecha y hora no pueden ser anteriores a hoy.");
+        if (cargaDTO.getFechaHora().isBefore(LocalDateTime.now().plusDays(1))) {
+            return ResponseEntity.badRequest().body("La carga debe ser programada con al menos 24 horas de anticipación.");
         }
 
         Carga nuevaCarga = cargaDTO.toEntity(clienteOpt.get());
         nuevaCarga.setEstaReliquidada(false);
         
-        // GENERAMOS EL CÓDIGO DE ENTREGA ALEATORIO
-        String codigo = String.valueOf((int)(Math.random() * 9000) + 1000);
-        nuevaCarga.setCodigoEntrega(codigo);
+        // GENERAMOS AMBOS CÓDIGOS
+        nuevaCarga.setCodigoEntrega(String.valueOf((int)(Math.random() * 9000) + 1000));
+        nuevaCarga.setCodigoRecogida(String.valueOf((int)(Math.random() * 9000) + 1000));
 
         // Buscar cargas compatibles
         List<Carga> cargasCompatibles = cargaRepository.findAll().stream()
@@ -138,7 +139,24 @@ public class CargaController {
         return ResponseEntity.ok(cargaRepository.save(carga));
     }
 
-    // R09: Confirmar entrega con Código y Observaciones
+    // R08: Confirmar Recogida (Valida código y pasa a EN_RUTA)
+    @PutMapping("/{cargaId}/confirmar-recogida")
+    public ResponseEntity<?> confirmarRecogida(@PathVariable Long cargaId, @RequestParam String codigo) {
+        Optional<Carga> cargaOpt = cargaRepository.findById(cargaId);
+        if (cargaOpt.isEmpty()) return ResponseEntity.badRequest().body("La carga no existe");
+        
+        Carga carga = cargaOpt.get();
+        
+        // BLOQUEO: Si el código no coincide, no cambia de estado
+        if (!carga.getCodigoRecogida().equals(codigo)) {
+            return ResponseEntity.badRequest().body("Código de recogida incorrecto. No se puede cambiar el estado.");
+        }
+        
+        carga.setEstado(Carga.EstadoCarga.EN_RUTA);
+        return ResponseEntity.ok(cargaRepository.save(carga));
+    }
+
+    // R09: Confirmar entrega (Valida código y pasa a ENTREGADA)
     @PutMapping("/{cargaId}/confirmar-entrega")
     public ResponseEntity<?> confirmarEntrega(
             @PathVariable Long cargaId,
@@ -150,9 +168,9 @@ public class CargaController {
 
         Carga carga = cargaOpt.get();
         
-        // VALIDACIÓN DEL CÓDIGO
+        // BLOQUEO: Si el código no coincide, no se finaliza
         if (!carga.getCodigoEntrega().equals(codigo)) {
-            return ResponseEntity.badRequest().body("El código de entrega es incorrecto");
+            return ResponseEntity.badRequest().body("El código de entrega es incorrecto. No se puede finalizar el viaje.");
         }
 
         carga.setEstado(Carga.EstadoCarga.ENTREGADA);
@@ -224,7 +242,7 @@ public class CargaController {
         return ResponseEntity.ok(cargas);
     }
 
-    // NUEVO: Obtener TODAS las cargas (para que el transportador vea sus viajes)
+    // Obtener TODAS las cargas
     @GetMapping("/todas")
     public ResponseEntity<?> obtenerTodasLasCargas() {
         return ResponseEntity.ok(cargaRepository.findAll());

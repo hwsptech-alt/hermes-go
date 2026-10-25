@@ -19,7 +19,6 @@ public class Carga {
     @Column(nullable = false)
     private String destino;
 
-    // NUEVOS CAMPOS PARA DIRECCIONES
     private String direccionOrigen;
     private String direccionDestino;
 
@@ -73,8 +72,9 @@ public class Carga {
     private Double precioFinal;
     private Boolean estaReliquidada = false;
 
-    // --- NUEVOS CAMPOS PARA EL ACTA DE ENTREGA (R09) ---
+    // --- CAMPOS PARA EL ACTA DE ENTREGA (R09) ---
     private String codigoEntrega;
+    private String codigoRecogida; // <-- ESTE ES EL QUE FALTABA
     private String observacionesEntrega;
 
     public enum EstadoCarga {
